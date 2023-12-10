@@ -1,0 +1,51 @@
+name: Update README
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  update_readme:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Node.js 16
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
+
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PAT }}
+
+    - name: Update README with weight and BMI
+      run: |
+        export TZ="Asia/Tokyo"
+        ISSUE_BODY="${{ github.event.issue.body }}"
+        WEIGHT_REGEX="([0-9]+(\.[0-9]+)?)"
+        HEIGHT=1.82
+        if [[ $ISSUE_BODY =~ $WEIGHT_REGEX ]]; then
+          WEIGHT=${BASH_REMATCH[1]}
+          BMI=$(echo "scale=2; $WEIGHT / ($HEIGHT * $HEIGHT)" | bc)
+          DATE=$(date +'%Y-%m-%d')
+            
+          NEW_ENTRY="| $DATE | $WEIGHT kg | $BMI |"
+            
+          # Remove the existing table header
+          sed -i '/^| Date/d' README.md
+          sed -i '/^| ---/d' README.md
+            
+          # Insert the new entry after the first line
+          sed -i "1 a $NEW_ENTRY" README.md
+            
+          # Add the table header back
+          sed -i "1 a | --- | --- | --- |" README.md
+          sed -i "1 a | Date | Weight | BMI |" README.md
+            
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "Update README with weight and calculated BMI from issue"
+          git push
+        fi
+      
