@@ -19,6 +19,7 @@ jobs:
         token: ${{ secrets.PAT }}
 
     - name: Update README with weight and BMI
+      if: github.event.issue.user.login == 'IdealistYu'
       run: |
         export TZ="Asia/Tokyo"
         ISSUE_BODY="${{ github.event.issue.body }}"
